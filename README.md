@@ -1,7 +1,6 @@
 # pfc_marker
 
-pfc_marker
-import edls (cmx3600) and dvs clipster-timelines as clip-frame-markers
+pfc_marker imports edls (cmx3600) and dvs clipster-timelines as clip-frame-markers
 
 into a existing pfclean-timeline.
 
