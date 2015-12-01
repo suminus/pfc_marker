@@ -1,0 +1,7 @@
+<!DOCTYPE RCC><RCC version="1.0">
+<qresource>
+    <file>pfc_marker_icon.ico</file>
+    <file>pfc_marker_logo.svg</file>
+    <file>pfc_marker_logo_closed.svg</file>
+</qresource>
+</RCC>
