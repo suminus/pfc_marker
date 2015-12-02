@@ -14,7 +14,7 @@ from PyQt5.QtWidgets import QMessageBox, QApplication, QMainWindow, QInputDialog
 from pfc_marker_ui import *
 
 
-version = "0.151202"
+version = "0.151203"
 ########################################################################
 
 os.environ["REQUESTS_CA_BUNDLE"] = os.path.join(os.getcwd(), "cacert.pem")
@@ -153,6 +153,7 @@ def enablebtn():
             ui.checkBox_rectc.setEnabled(True)
             ui.btn_seledl.setEnabled(True)
             ui.btn_selcp.setEnabled(True)
+            ui.btn_selcsv.setEnabled(True)
             selected_prjseqname = str(ui.combobox_selectseq.currentText())
             print('seleceted prjseqname in combobox_selectseq -> filtered: ' + selected_prjseqname)
 
@@ -216,7 +217,7 @@ def seledl():
     else:
         pass
 
-    fileName, _ = QFileDialog.getOpenFileName(None, "select cmx 3600 edl with 25fps", '' , "EDL's (*.edl);;All Files (*.*)")
+    fileName, _ = QFileDialog.getOpenFileName(None, "select cmx 3600 edl with pfclean project framerate", '' , "EDL's (*.edl);;All Files (*.*)")
     if fileName:
         edlpath = fileName
         edl = edlpath.split('/')[-1:]
@@ -384,8 +385,74 @@ def selcp():
         ui.label_msgs.append('no clipster-project selected!')
 
 def selcsv():
-    pass
+    openFilesPath = ''
+    fileName, _ = QFileDialog.getOpenFileName(None, "select csv file with new line with new event", '' , "csv textfile (*.txt);;All Files (*.*)")
+    if fileName:
+        prjseqfps = prjdic.get('prjseqfps')
+        prjseqoff = prjdic.get('prjseqoff')
+        prjseqid = prjdic.get('prjseqid')
+        prjseqstart = prjdic.get('prjseqstart')
+        prjseqend = prjdic.get('prjseqend')
 
+        csvpath = fileName
+        csvfile = csvpath.split('/')[-1:]
+        csvfile = ' '.join(csvfile)
+        ui.label_msgs.append('selected csv:<b> ' + csvfile)
+        csvtclist = []
+        with open(csvpath) as f:
+            file = open(xml_formatted_markers, "w")
+            file.write('\t<clipFrameMarkers>\n\t\t<clipFrameMarker>\n\t\t\t<identifier>%s</identifier>\n\t\t\t<counter>%s</counter>\n\t\t\t<frameMarkers>' % (prjseqid, prjseqoff))
+            count = 0
+
+            for line in f:
+                if line[0].isdigit():
+                    linecons =' '.join(line.split())
+                    linecons = linecons.split(',')
+                    csvevent = linecons[0]
+                    csvnotes = linecons[1]
+                    csvtclist.append(csvevent)
+                    print(linecons[0])
+                    print(linecons[1])
+
+                    csvtclistframes = []
+                    csvtcfr = Timecode(prjseqfps, csvevent)
+                    eventframes = csvtcfr.frames
+                    eventframes = eventframes - 1 # remove one frame offset
+                    csvtclistframes.append(eventframes)
+                    print(csvtclistframes)
+                    if  eventframes >= int(prjseqstart) and eventframes <= int(prjseqend):
+                        count +=1
+                        insert1 ="\n\t\t\t\t<frameMarker>"
+                        insert2 ="\n\t\t\t\t\t<frame>%s</frame>" % eventframes #\n
+                        insert3 ="\n\t\t\t\t\t<name>%s</name>" % csvfile
+                        insert4 ="\n\t\t\t\t\t<notes>%s</notes>" % csvnotes
+                        insert5 ="\n\t\t\t\t</frameMarker>"
+                        file = open(xml_formatted_markers, "a+")
+                        file.write(str(insert1))
+                        file.write(str(insert2))
+                        file.write(str(insert3))
+                        file.write(str(insert4))
+                        file.write(str(insert5))
+                        file.close()
+                    file = open(xml_formatted_markers, "a+")
+                    file.write('\n\t\t\t</frameMarkers>\n\t\t</clipFrameMarker>\n\t</clipFrameMarkers>')
+                    file.close()
+                    ui.label_msgs.append(csvfile + ' contains ' + str(len(csvtclist)) + ' entries.')
+                    ui.label_msgs.append('csv events in sequence range: <b>' + str(count))
+                    print(csvtclist)
+                    print('csv-events: ' + str(len(csvtclist)))
+                else:
+                    print('-> skipped line: ' + line[0] + 'not a valid event entry!' )
+                    pass
+        if count == 0:
+            ui.btn_import.setEnabled(False)
+            ui.btn_xml.setEnabled(False)
+        else:
+            ui.btn_import.setEnabled(True)
+            ui.btn_xml.setEnabled(True)
+        
+        ui.checkBox_srctc.setEnabled(False)
+        ui.checkBox_rectc.setEnabled(False)
 
 def savexmlmarker():
     filename, _ = QFileDialog.getSaveFileName(None, 'Save XML-formated Markers to Text-File', str(prjdic.get('prjfolder') + prjdic.get('prj') +'_xml_markers.txt') , "Text Files (*.txt);; All Files (*)")
@@ -603,6 +670,9 @@ if __name__ == '__main__':
     ui.btn_selcp.clicked.connect(selcp)
     ui.btn_selcp.setEnabled(False)
 
+    ui.btn_selcsv.clicked.connect(selcsv)
+    ui.btn_selcsv.setEnabled(False)
+
     ui.menuUpdate.setTitle("")
     ui.btn_import.setEnabled(False)
     ui.checkBox_srctc.setEnabled(False)
@@ -622,7 +692,7 @@ if __name__ == '__main__':
 
     if checkupdateinitcfg == 'checkupdates=1':
         ui.actionCheckUpdates.setChecked(True)
-        timer.singleShot(3000, checkupdate)
+        timer.singleShot(10000, checkupdate)
     else:
         ui.actionCheckUpdates.setChecked(False)
     
