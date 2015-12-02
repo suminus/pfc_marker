@@ -8,6 +8,8 @@ clipster: timeline-markers including names and comments
 
 csv-text: one marker-event per line, timecode separated by by the first comma
 
+timecode-math done with: https://github.com/eoyilmaz/timecode
+
 written in python3.4.3 and pyqt5, windows x64
 
 http://suminus.github.io/pfc_marker
