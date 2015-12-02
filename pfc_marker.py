@@ -141,7 +141,6 @@ def selprj():
     else:
         print('no project selected!')
         ui.label_msgs.setText('no pfclean-project selected!')
-
     ui.checkBox_srctc.setEnabled(False)
     ui.checkBox_rectc.setEnabled(False)
 
@@ -384,11 +383,12 @@ def selcp():
     else:
         ui.label_msgs.append('no clipster-project selected!')
 
-   
+def selcsv():
+    pass
 
 
 def savexmlmarker():
-    filename, _ = QFileDialog.getSaveFileName(None, 'Save XML-formated Markers to Text-File', str(prjdic.get('prjfolder') + '_xml_markers.txt') , "Text Files (*.txt);; All Files (*)")
+    filename, _ = QFileDialog.getSaveFileName(None, 'Save XML-formated Markers to Text-File', str(prjdic.get('prjfolder') + prjdic.get('prj') +'_xml_markers.txt') , "Text Files (*.txt);; All Files (*)")
     if filename:
         with open(xml_formatted_markers, 'rb') as f:
             data = f.read()
@@ -622,7 +622,7 @@ if __name__ == '__main__':
 
     if checkupdateinitcfg == 'checkupdates=1':
         ui.actionCheckUpdates.setChecked(True)
-        checkupdate()
+        timer.singleShot(3000, checkupdate)
     else:
         ui.actionCheckUpdates.setChecked(False)
     
