@@ -336,7 +336,8 @@ def selcp():
                     del comment[0]
                     comment = ' '.join(comment)
                     cptclist.append(event)
-                    eventfr = int(int(event[0]) / 40000000)
+                    nanotofr = int(1000000000 / int(prjseqfps))
+                    eventfr = int(int(event[0]) / nanotofr)    #40000000 @ 25fps
                     print(eventfr)
                     eventfroff = eventfr + cptcoffset
                     cptclistframes.append(eventfroff)
