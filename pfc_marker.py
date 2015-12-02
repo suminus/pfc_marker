@@ -39,9 +39,10 @@ else:
     file = open(initcfg, "w")
     file.write("select pfrp\ncheckupdates=1")
     file.close()
-    file = open(initcfg, 'r')
-    recentprjfld = file.readline()
-    file.close()
+    with open(initcfg, "r") as file:
+        lines = file.readlines()
+        recentprjfld = lines[0]
+        checkupdateinitcfg = lines[1]
 
 prjdic ={}
 
@@ -76,6 +77,7 @@ def selprj():
         print(prj)
         prjdic['prj'] = prj
         recentprjfldnew = prj.rsplit('/', 1)[0]
+        recentprjfldnew = recentprjfldnew + '/'
         prjdic['prjfolder'] = recentprjfldnew
         
         with open(initcfg, "r") as file:
