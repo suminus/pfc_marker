@@ -410,11 +410,13 @@ def selcsv():
                     linecons =' '.join(line.split())
                     linecons = linecons.split(',')
                     csvevent = linecons[0]
-                    csvnotes = linecons[1]
+                    csvnoteslen = int(len(linecons))
+                    csvnoteslist = []
+                    for i in range(csvnoteslen):
+                        if i > 0:
+                            csvnoteslist.append(linecons[i])
+                    print(csvnoteslist)
                     csvtclist.append(csvevent)
-                    print(linecons[0])
-                    print(linecons[1])
-
                     csvtclistframes = []
                     csvtcfr = Timecode(prjseqfps, csvevent)
                     eventframes = csvtcfr.frames
@@ -426,7 +428,7 @@ def selcsv():
                         insert1 ="\n\t\t\t\t<frameMarker>"
                         insert2 ="\n\t\t\t\t\t<frame>%s</frame>" % eventframes #\n
                         insert3 ="\n\t\t\t\t\t<name>%s</name>" % csvfile
-                        insert4 ="\n\t\t\t\t\t<notes>%s</notes>" % csvnotes
+                        insert4 ="\n\t\t\t\t\t<notes>%s</notes>" % (','.join(csvnoteslist))
                         insert5 ="\n\t\t\t\t</frameMarker>"
                         file = open(xml_formatted_markers, "a+")
                         file.write(str(insert1))
