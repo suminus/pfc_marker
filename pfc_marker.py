@@ -467,7 +467,7 @@ def savexmlmarker():
         with open(filename, 'wb') as f:
             f.write(data)
         ui.label_msgs.append('file saved as: \n' + str(filename))
-        os.startfile(filename)
+        os.system(filename)
     else:
         pass
 
