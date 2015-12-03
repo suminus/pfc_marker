@@ -14,7 +14,7 @@ from PyQt5.QtWidgets import QMessageBox, QApplication, QMainWindow, QInputDialog
 from pfc_marker_ui import *
 
 
-version = "0.151203"
+version = "0.151204"
 ########################################################################
 
 os.environ["REQUESTS_CA_BUNDLE"] = os.path.join(os.getcwd(), "cacert.pem")
@@ -110,7 +110,7 @@ def selprj():
                     if str(prjseqname[0]) == 'Rough edit 1':
                         if pattern in open(prjseqpath).read():
                             print('0 lenght ---- boom!!')
-                            ui.label_msgs.append('filtered "Rough edit 1" as pfclean internal zero-length seq')
+                            ui.label_msgs.append('filtered "Rough edit 1" as pfclean zero-length seq')
                         else:
                             ui.combobox_selectseq.addItems(prjseqname)
                             prjseqname = ' '.join(prjseqname)
@@ -119,7 +119,7 @@ def selprj():
                     elif str(prjseqname[0]) == 'Sequence 1':
                         if pattern in open(prjseqpath).read():
                             print('0 lenght ---- boom!!')
-                            ui.label_msgs.append('filtered "Sequence 1" as pfclean internal zero-length seq')
+                            ui.label_msgs.append('filtered "Sequence 1" as pfclean zero-length seq')
                         else:
                             ui.combobox_selectseq.addItems(prjseqname)
                             prjseqname = ' '.join(prjseqname)
@@ -217,6 +217,12 @@ def seledl():
     else:
         pass
 
+    prjseqoff = prjdic.get('prjseqoff')
+    prjseqid = prjdic.get('prjseqid')
+    prjseqstart = prjdic.get('prjseqstart')
+    prjseqend = prjdic.get('prjseqend')
+    prjseqfps = prjdic.get('prjseqfps')
+    
     fileName, _ = QFileDialog.getOpenFileName(None, "select cmx 3600 edl with pfclean project framerate", '' , "EDL's (*.edl);;All Files (*.*)")
     if fileName:
         edlpath = fileName
@@ -239,7 +245,7 @@ def seledl():
             print(tclist)
             print('edl-events: ' + str(len(tclist)))
 
-        prjseqfps = prjdic.get('prjseqfps')
+
         tclistframes = []
         for event in tclist:
             tcfr = Timecode(prjseqfps, event)
@@ -247,10 +253,6 @@ def seledl():
             eventframes = eventframes - 1 # remove one frame offset
             tclistframes.append(eventframes)
         
-        prjseqoff = prjdic.get('prjseqoff')
-        prjseqid = prjdic.get('prjseqid')
-        prjseqstart = prjdic.get('prjseqstart')
-        prjseqend = prjdic.get('prjseqend')
         file = open(xml_formatted_markers, "w")
         file.write('\t<clipFrameMarkers>\n\t\t<clipFrameMarker>\n\t\t\t<identifier>%s</identifier>\n\t\t\t<counter>%s</counter>\n\t\t\t<frameMarkers>' % (prjseqid, prjseqoff))
         count = 0
@@ -465,7 +467,7 @@ def savexmlmarker():
         with open(filename, 'wb') as f:
             f.write(data)
         ui.label_msgs.append('file saved as: \n' + str(filename))
-        os.system(filename)
+        os.startfile(filename)
     else:
         pass
 
