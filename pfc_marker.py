@@ -6,17 +6,17 @@ import sys, time, re, os, string, itertools, fileinput, shutil, subprocess, insp
 from lxml import etree
 import lxml.etree as etree
 from timecode import Timecode
-from urllib.request import urlopen, Request
+from urllib.request import urlopen, Request, urlretrieve
 import requests
 from PyQt5 import QtCore, QtSvg
-from PyQt5.QtCore import QDir, Qt
+from PyQt5.QtCore import QDir, Qt, QThread
 from PyQt5.QtWidgets import QMessageBox, QApplication, QMainWindow, QInputDialog, QLineEdit, QFileDialog, QLabel
 from pfc_marker_ui import *
 
 
-version = "0.151204"
+version = "0.151206"
 ########################################################################
-
+prjdic = {}
 os.environ["REQUESTS_CA_BUNDLE"] = os.path.join(os.getcwd(), "cacert.pem")
 
 programdata = os.getenv('ALLUSERSPROFILE')
@@ -28,7 +28,6 @@ if not os.path.isdir(programdata_pfc_marker):
 
 initcfg = os.path.join(programdata_pfc_marker, 'init.cfg')
 xml_formatted_markers = os.path.join(programdata_pfc_marker, 'xml_formatted_markers.txt')
-
 
 if os.path.isfile(initcfg):
     with open(initcfg, "r") as file:
@@ -44,15 +43,13 @@ else:
         recentprjfld = lines[0]
         checkupdateinitcfg = lines[1]
 
-prjdic ={}
-
 
 def about():
 
     aboutcontent =  "<p>nifty tool to inject cmx3600-edl events or dvs clipster markers</p>" \
                     "<p>as clip-markers into a sequence of your pfclean-project.</p>" \
                     "<p>written in python3.4.3, gui pyqt5, x64</p>" \
-                    "<p><a href=http://suminus.github.io/pfc_marker style=\"color: black;\" ><b>open project page</a></p>" \
+                    "<p><a href=http://suminus.github.io/pfc_marker style=\"color: black;\" ><b>visit project page</a></p>" \
                    #"<p><a href='mailto:support@mariohartz.de' style=\"color: black;\" ><b>© mario hartz</a> </b></p>"
 
     reply = QMessageBox.information(None, "About", aboutcontent)
@@ -217,67 +214,58 @@ def seledl():
     else:
         pass
 
-    prjseqoff = prjdic.get('prjseqoff')
-    prjseqid = prjdic.get('prjseqid')
-    prjseqstart = prjdic.get('prjseqstart')
-    prjseqend = prjdic.get('prjseqend')
-    prjseqfps = prjdic.get('prjseqfps')
-    
     fileName, _ = QFileDialog.getOpenFileName(None, "select cmx 3600 edl with pfclean project framerate", '' , "EDL's (*.edl);;All Files (*.*)")
     if fileName:
+        prjseqoff = prjdic.get('prjseqoff')
+        prjseqid = prjdic.get('prjseqid')
+        prjseqstart = prjdic.get('prjseqstart')
+        prjseqend = prjdic.get('prjseqend')
+        prjseqfps = prjdic.get('prjseqfps')
         edlpath = fileName
         edl = edlpath.split('/')[-1:]
         edl = ' '.join(edl)
         tclist = []
+        count = 0
+        file = open(xml_formatted_markers, "w")
+        file.write('\t<clipFrameMarkers>\n\t\t<clipFrameMarker>\n\t\t\t<identifier>%s</identifier>\n\t\t\t<counter>%s</counter>\n\t\t\t<frameMarkers>' % (prjseqid, prjseqoff))
+
         with open(edlpath) as f:
             for line in f:
-                check = line
-                if check[0].isdigit():
+                if line[0].isdigit():
                     linecons =' '.join(line.split())
                     linecons = linecons.split(' ')
                     if linecons[3] == 'D':
                         print('--> dissolve detected!!')
                     else:
-                        tclist.append(linecons[conformmode])  # conformmode srctc = 4     rectc = 6
+                        tclist.append(linecons[conformmode])
+                        tcfr = Timecode(prjseqfps, linecons[conformmode])
+                        eventframes = tcfr.frames
+                        eventframes = eventframes - 1
+                        if  eventframes >= int(prjseqstart) and eventframes <= int(prjseqend):
+                            count +=1
+                            insert1 ="\n\t\t\t\t<frameMarker>"
+                            insert2 ="\n\t\t\t\t\t<frame>%s</frame>" % eventframes #\n
+                            insert3 ="\n\t\t\t\t\t<name>%s</name>" % edl
+                            insert4 ="\n\t\t\t\t\t<notes>%s</notes>" % linecons[1] # usually tapename
+                            insert5 ="\n\t\t\t\t</frameMarker>"
+                            file = open(xml_formatted_markers, "a+")
+                            file.write(str(insert1))
+                            file.write(str(insert2))
+                            file.write(str(insert3))
+                            file.write(str(insert4))
+                            file.write(str(insert5))
+                            file.close()
                 else:
-                    print('-> skipped line: ' + check + 'not a valid event entry!' )
+                    print('-> skipped line: ' + line[0] + 'not a valid event entry!' )
                     pass
-            print(tclist)
             print('edl-events: ' + str(len(tclist)))
-
-
-        tclistframes = []
-        for event in tclist:
-            tcfr = Timecode(prjseqfps, event)
-            eventframes = tcfr.frames
-            eventframes = eventframes - 1 # remove one frame offset
-            tclistframes.append(eventframes)
-        
-        file = open(xml_formatted_markers, "w")
-        file.write('\t<clipFrameMarkers>\n\t\t<clipFrameMarker>\n\t\t\t<identifier>%s</identifier>\n\t\t\t<counter>%s</counter>\n\t\t\t<frameMarkers>' % (prjseqid, prjseqoff))
-        count = 0
-        for event in tclistframes:
-            if  event >= int(prjseqstart) and event <= int(prjseqend):
-                count +=1
-                insert1 ="\n\t\t\t\t<frameMarker>"
-                insert2 ="\n\t\t\t\t\t<frame>%s</frame>" % event #\n
-                insert3 ="\n\t\t\t\t\t<name>%s</name>" % edl
-                insert4 ="\n\t\t\t\t\t<notes>%s</notes>" % ('based on: ' + edl + ' parsed at: ' + time.strftime("%Y-%d-%m-%H-%M-%S"))
-                insert5 ="\n\t\t\t\t</frameMarker>"
-                file = open(xml_formatted_markers, "a+")
-                file.write(str(insert1))
-                file.write(str(insert2))
-                file.write(str(insert3))
-                file.write(str(insert4))
-                file.write(str(insert5))
-                file.close()
         file = open(xml_formatted_markers, "a+")
         file.write('\n\t\t\t</frameMarkers>\n\t\t</clipFrameMarker>\n\t</clipFrameMarkers>')
         file.close()
 
-        ui.label_msgs.append(edl + ' contains ' + str(len(tclist)) + ' entries.')
-        ui.label_msgs.append('parsed with <b>' + prjseqfps + 'fps </b>' + conformmodemsg )
+        ui.label_msgs.append(edl + ' contains <b>' + str(len(tclist)) + '</b> entries.')
         ui.label_msgs.append('edl events in sequence range: <b>' + str(count))
+        ui.label_msgs.append('parsed with <b>' + prjseqfps + 'fps </b>' + conformmodemsg )
 
         if count == 0:
             ui.btn_import.setEnabled(False)
@@ -367,7 +355,6 @@ def selcp():
             file = open(xml_formatted_markers, "a+")
             file.write('\n\t\t\t</frameMarkers>\n\t\t</clipFrameMarker>\n\t</clipFrameMarkers>')
             file.close()
-
 
         ui.label_msgs.append(cprjfile + ' contains ' + str(len(cptclist)) + ' timeline-marker entries.')
         ui.label_msgs.append(cprjfile + ' timeline offset is: ' + str(cptcoffset))
@@ -556,7 +543,7 @@ def blink():
 def logochange():
     try:
         ui.logo.setPixmap(QtGui.QPixmap(":/pfc_marker_logo_closed.svg"))
-        timer.singleShot(200, blink)
+        timer.singleShot(166, blink)
     finally:
         pass
 
@@ -582,7 +569,6 @@ def checkupdateconf():
         with open(initcfg, "w") as file:
             for line in lines:
                 file.write(line)
-
 
 def checkupdate():
 
@@ -626,9 +612,11 @@ def update():
         check = requests.head(msi_updateurl, verify=find_data_file('cacert.pem')).status_code
         print('   RET:   ' + str(check))
         if check == 302:
-            with urllib.request.urlopen(msi_updateurl) as response, open(os.path.join(os.getenv('TEMP'), msi_update), 'wb') as out_file:
-                data = response.read()
-                out_file.write(data)
+            savepath = str(os.path.join(os.getenv('TEMP'))) + '\\' + msi_update
+            urlretrieve(msi_updateurl, savepath, downloadprogress)
+            #with urllib.request.urlopen(msi_updateurl) as response, open(os.path.join(os.getenv('TEMP'), msi_update), 'wb') as out_file:
+            #    data = response.read()
+            #    out_file.write(data)
             os.startfile(os.path.join(os.getenv('TEMP'), msi_update))
             exit()
         else:
@@ -640,6 +628,20 @@ def update():
     else:
         print("Cancel")
 
+def downloadprogress(blocknum, blocksize, totalsize):
+    readsofar = blocknum * blocksize
+    if totalsize > 0:
+        percent = readsofar * 1e2 / totalsize
+        s = "\r%5.1f%% %*d / %d" % (percent, len(str(totalsize)), readsofar, totalsize)
+        sys.stderr.write(s)
+        ui.label_msgs.append(str(percent))
+
+        if readsofar >= totalsize: # near the end
+            sys.stderr.write("\n")
+    else: # total size is unknown
+        sys.stderr.write("read %d\n" % (readsofar,))
+
+
 def find_data_file(filename):
     if getattr(sys, 'frozen', False):
         # The application is frozen
@@ -648,9 +650,7 @@ def find_data_file(filename):
         # The application is not frozen
         # Change this bit to match where you store your data files:
         datadir = os.path.dirname(__file__)
-
     return os.path.join(datadir, filename)
-
 
 
 if __name__ == '__main__':
@@ -659,11 +659,11 @@ if __name__ == '__main__':
     MainWindow = QMainWindow()
     ui = Ui_MainWindow()
     ui.setupUi(MainWindow)
-    MainWindow.setWindowTitle("pfclean marker %s x64" % version)
+    MainWindow.setWindowTitle("pfc_marker %s" % version)
 
     timer=QtCore.QTimer()
     timer.timeout.connect(logochange)
-    timer.start(6000)
+    timer.start(5000)
 
     ui.actionExit.triggered.connect(exit)
     ui.actionAbout.triggered.connect(about)
@@ -701,6 +701,5 @@ if __name__ == '__main__':
     else:
         ui.actionCheckUpdates.setChecked(False)
     
-
     MainWindow.show()
     sys.exit(app.exec_())
