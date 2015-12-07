@@ -613,10 +613,10 @@ def update():
         print('   RET:   ' + str(check))
         if check == 302:
             savepath = str(os.path.join(os.getenv('TEMP'))) + '\\' + msi_update
-            urlretrieve(msi_updateurl, savepath, downloadprogress)
-            #with urllib.request.urlopen(msi_updateurl) as response, open(os.path.join(os.getenv('TEMP'), msi_update), 'wb') as out_file:
-            #    data = response.read()
-            #    out_file.write(data)
+            #urlretrieve(msi_updateurl, savepath, downloadprogress)
+            with urllib.request.urlopen(msi_updateurl) as response, open(os.path.join(os.getenv('TEMP'), msi_update), 'wb') as out_file:
+                data = response.read()
+                out_file.write(data)
             os.startfile(os.path.join(os.getenv('TEMP'), msi_update))
             exit()
         else:
