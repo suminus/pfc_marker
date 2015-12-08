@@ -14,7 +14,7 @@ from PyQt5.QtWidgets import QMessageBox, QApplication, QMainWindow, QInputDialog
 from pfc_marker_ui import *
 
 
-version = "0.151206"
+version = "0.151208"
 ########################################################################
 prjdic = {}
 os.environ["REQUESTS_CA_BUNDLE"] = os.path.join(os.getcwd(), "cacert.pem")
@@ -571,7 +571,6 @@ def checkupdateconf():
                 file.write(line)
 
 def checkupdate():
-
     if check_internet():
         buildmsi = version
         msi_update = 'https://raw.githubusercontent.com/suminus/pfc_marker/master/msi/current_version'
@@ -588,6 +587,8 @@ def checkupdate():
                 ui.menuUpdate.setTitle("Update available!")
                 ui.actionUpdate.setEnabled(True)
                 prjdic['onlinemsi'] = onlinemsi
+            else:
+                ui.label_msgs.append('no updates found.')
         else:
             print(check)
             ui.menuUpdate.setTitle("")
@@ -613,11 +614,14 @@ def update():
         print('   RET:   ' + str(check))
         if check == 302:
             savepath = str(os.path.join(os.getenv('TEMP'))) + '\\' + msi_update
-            #urlretrieve(msi_updateurl, savepath, downloadprogress)
-            with urllib.request.urlopen(msi_updateurl) as response, open(os.path.join(os.getenv('TEMP'), msi_update), 'wb') as out_file:
-                data = response.read()
-                out_file.write(data)
-            os.startfile(os.path.join(os.getenv('TEMP'), msi_update))
+            ui.progressBar.show()
+            ui.statusbar.addPermanentWidget(ui.progressBar)
+            ui.progressBar.setValue(0)
+            try:
+                urllib.request.urlretrieve(msi_updateurl, savepath, downprogress)
+                os.startfile(os.path.join(os.getenv('TEMP'), msi_update))
+            except Exception:
+                ui.label_msgs.append('download of update failed!')
             exit()
         else:
             ui.label_msgs.append('updatefile not found!')
@@ -628,19 +632,11 @@ def update():
     else:
         print("Cancel")
 
-def downloadprogress(blocknum, blocksize, totalsize):
+def downprogress(blocknum, blocksize, totalsize):
     readsofar = blocknum * blocksize
     if totalsize > 0:
-        percent = readsofar * 1e2 / totalsize
-        s = "\r%5.1f%% %*d / %d" % (percent, len(str(totalsize)), readsofar, totalsize)
-        sys.stderr.write(s)
-        ui.label_msgs.append(str(percent))
-
-        if readsofar >= totalsize: # near the end
-            sys.stderr.write("\n")
-    else: # total size is unknown
-        sys.stderr.write("read %d\n" % (readsofar,))
-
+        percent = readsofar * 100 / totalsize
+        ui.progressBar.setValue(int(percent))
 
 def find_data_file(filename):
     if getattr(sys, 'frozen', False):
@@ -651,6 +647,7 @@ def find_data_file(filename):
         # Change this bit to match where you store your data files:
         datadir = os.path.dirname(__file__)
     return os.path.join(datadir, filename)
+
 
 
 if __name__ == '__main__':
@@ -694,10 +691,12 @@ if __name__ == '__main__':
 
     ui.actionUpdate.triggered.connect(update)
     ui.actionCheckUpdates.triggered.connect(checkupdateconf)
+    ui.progressBar.hide()
 
     if checkupdateinitcfg == 'checkupdates=1':
+        ui.label_msgs.append('checking for updates ...')
         ui.actionCheckUpdates.setChecked(True)
-        timer.singleShot(10000, checkupdate)
+        timer.singleShot(100, checkupdate)
     else:
         ui.actionCheckUpdates.setChecked(False)
     
