@@ -14,7 +14,7 @@ from PyQt5.QtWidgets import QMessageBox, QApplication, QMainWindow, QInputDialog
 from pfc_marker_ui import *
 
 
-version = "0.151208"
+version = "0.151209"
 ########################################################################
 prjdic = {}
 os.environ["REQUESTS_CA_BUNDLE"] = os.path.join(os.getcwd(), "cacert.pem")
@@ -586,15 +586,17 @@ def checkupdate():
             if onlinemsi > buildmsi:
                 ui.menuUpdate.setTitle("Update available!")
                 ui.actionUpdate.setEnabled(True)
+                ui.label_msgs.setText('checking for updates ... update found.')
                 prjdic['onlinemsi'] = onlinemsi
             else:
-                ui.label_msgs.append('no updates found.')
+                ui.label_msgs.setText('checking for updates ... no update found.')
         else:
             print(check)
             ui.menuUpdate.setTitle("")
     else:
         ui.menuUpdate.setTitle("")
         ui.label_msgs.append('no internet access')
+
 
 def update():
     updatecontent = "<p>do you want to download the latest msi-package?</p>" \
@@ -619,6 +621,7 @@ def update():
             ui.progressBar.setValue(0)
             try:
                 urllib.request.urlretrieve(msi_updateurl, savepath, downprogress)
+                ui.label_msgs.append('download finished.')
                 os.startfile(os.path.join(os.getenv('TEMP'), msi_update))
             except Exception:
                 ui.label_msgs.append('download of update failed!')
@@ -694,7 +697,7 @@ if __name__ == '__main__':
     ui.progressBar.hide()
 
     if checkupdateinitcfg == 'checkupdates=1':
-        ui.label_msgs.append('checking for updates ...')
+        ui.label_msgs.setText('checking for updates ...')
         ui.actionCheckUpdates.setChecked(True)
         timer.singleShot(100, checkupdate)
     else:

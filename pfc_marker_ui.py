@@ -289,10 +289,37 @@ class Ui_MainWindow(object):
         sizePolicy.setHeightForWidth(self.progressBar.sizePolicy().hasHeightForWidth())
         self.progressBar.setSizePolicy(sizePolicy)
         self.progressBar.setMaximumSize(QtCore.QSize(16777215, 13))
-        self.progressBar.setProperty("value", 0)
+        font = QtGui.QFont()
+        font.setFamily("MS Shell Dlg 2")
+        font.setPointSize(8)
+        font.setBold(False)
+        font.setWeight(50)
+        self.progressBar.setFont(font)
+        self.progressBar.setToolTip("")
+        self.progressBar.setStatusTip("")
+        self.progressBar.setWhatsThis("")
+        self.progressBar.setAccessibleName("")
+        self.progressBar.setLayoutDirection(QtCore.Qt.LeftToRight)
+        self.progressBar.setAutoFillBackground(False)
+        self.progressBar.setStyleSheet("    QProgressBar{\n"
+"        border: 0px solid grey;\n"
+"        border-radius: 0px;\n"
+"        text-align: center;\n"
+"        color: black\n"
+"    }\n"
+"\n"
+"    QProgressBar::chunk {\n"
+"        background-color: magenta;\n"
+"        width: 2px;\n"
+"        margin: 0px;\n"
+"    }")
+        self.progressBar.setProperty("value", 33)
         self.progressBar.setAlignment(QtCore.Qt.AlignLeading|QtCore.Qt.AlignLeft|QtCore.Qt.AlignVCenter)
+        self.progressBar.setTextVisible(True)
+        self.progressBar.setOrientation(QtCore.Qt.Horizontal)
         self.progressBar.setInvertedAppearance(False)
         self.progressBar.setTextDirection(QtWidgets.QProgressBar.TopToBottom)
+        self.progressBar.setFormat("%p%")
         self.progressBar.setObjectName("progressBar")
         MainWindow.setCentralWidget(self.centralwidget)
         self.menubar = QtWidgets.QMenuBar(MainWindow)
