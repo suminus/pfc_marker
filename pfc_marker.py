@@ -14,20 +14,27 @@ from PyQt5.QtWidgets import QMessageBox, QApplication, QMainWindow, QInputDialog
 from pfc_marker_ui import *
 
 
-version = "0.151209"
+version = "0.151212"
 ########################################################################
 prjdic = {}
 os.environ["REQUESTS_CA_BUNDLE"] = os.path.join(os.getcwd(), "cacert.pem")
 
+#remove old versions programdata init, due to user-rights issues
 programdata = os.getenv('ALLUSERSPROFILE')
 print(programdata)
 programdata_pfc_marker = os.path.join(programdata,'pfc_marker')
 print(programdata_pfc_marker)
-if not os.path.isdir(programdata_pfc_marker):
-    os.makedirs(programdata_pfc_marker)
+if os.path.isdir(programdata_pfc_marker):
+    shutil.rmtree(programdata_pfc_marker)
 
-initcfg = os.path.join(programdata_pfc_marker, 'init.cfg')
-xml_formatted_markers = os.path.join(programdata_pfc_marker, 'xml_formatted_markers.txt')
+userhome = os.getenv('USERPROFILE')
+appdata_pfc_marker = os.path.join(userhome,'AppData', 'Roaming', 'pfc_marker')
+if not os.path.isdir(appdata_pfc_marker): 
+    os.makedirs(appdata_pfc_marker)
+print(appdata_pfc_marker)
+
+initcfg = os.path.join(appdata_pfc_marker, 'init.cfg')
+xml_formatted_markers = os.path.join(appdata_pfc_marker, 'xml_formatted_markers.txt')
 
 if os.path.isfile(initcfg):
     with open(initcfg, "r") as file:
@@ -36,7 +43,7 @@ if os.path.isfile(initcfg):
         checkupdateinitcfg = lines[1]
 else:
     file = open(initcfg, "w")
-    file.write("select pfrp\ncheckupdates=1")
+    file.write("select projectfile\ncheckupdates=1")
     file.close()
     with open(initcfg, "r") as file:
         lines = file.readlines()
@@ -46,9 +53,9 @@ else:
 
 def about():
 
-    aboutcontent =  "<p>nifty tool to inject cmx3600-edl events or dvs clipster markers</p>" \
+    aboutcontent =  "<p>nifty tool to inject cmx3600-edl events, csv or dvs clipster markers</p>" \
                     "<p>as clip-markers into a sequence of your pfclean-project.</p>" \
-                    "<p>written in python3.4.3, gui pyqt5, x64</p>" \
+                    "<p>written in python3.4.3, gui pyqt5, win 7/8/10 x64</p>" \
                     "<p><a href=http://suminus.github.io/pfc_marker style=\"color: black;\" ><b>visit project page</a></p>" \
                    #"<p><a href='mailto:support@mariohartz.de' style=\"color: black;\" ><b>© mario hartz</a> </b></p>"
 
