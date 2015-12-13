@@ -14,7 +14,7 @@ from PyQt5.QtWidgets import QMessageBox, QApplication, QMainWindow, QInputDialog
 from pfc_marker_ui import *
 
 
-version = "0.151212"
+version = "0.151213"
 ########################################################################
 prjdic = {}
 os.environ["REQUESTS_CA_BUNDLE"] = os.path.join(os.getcwd(), "cacert.pem")
@@ -469,9 +469,9 @@ def inject():
 
     prjbkp = str(prjdic.get('prj')) + time.strftime("%Y-%d-%m-%H-%M-%S") + '.bkp'
     shutil.copyfile(str(prjdic.get('prj')), prjbkp)
-
-    temp = os.path.join(programdata_pfc_marker, 'temp')
-    injectmarkers = os.path.join(programdata_pfc_marker, 'xml_formatted_markers.txt')
+    ui.label_msgs.append('backup-file: ' + str(prjbkp))
+    temp = os.path.join(appdata_pfc_marker, 'temp')
+    injectmarkers = os.path.join(appdata_pfc_marker, 'xml_formatted_markers.txt')
     injectmarkers = etree.parse(injectmarkers)
     injectmarkers = injectmarkers.find('clipFrameMarker')
 
