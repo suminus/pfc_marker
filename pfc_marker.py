@@ -2,19 +2,18 @@
 # -*- coding: utf-8 -*-
 # pfc_marker released under GPLv3
 
-import sys, time, re, os, string, itertools, fileinput, shutil, subprocess, inspect, urllib.request
-from lxml import etree
+import sys, time, re, os, string, itertools, fileinput, shutil, subprocess, inspect, urllib.request, requests
 import lxml.etree as etree
+from lxml import etree
 from timecode import Timecode
 from urllib.request import urlopen, Request, urlretrieve
-import requests
 from PyQt5 import QtCore, QtSvg
-from PyQt5.QtCore import QDir, Qt, QThread
+from PyQt5.QtCore import QDir, Qt
 from PyQt5.QtWidgets import QMessageBox, QApplication, QMainWindow, QInputDialog, QLineEdit, QFileDialog, QLabel
 from pfc_marker_ui import *
 
 
-version = "0.151213"
+version = "0.160128"
 ########################################################################
 prjdic = {}
 os.environ["REQUESTS_CA_BUNDLE"] = os.path.join(os.getcwd(), "cacert.pem")
@@ -53,7 +52,7 @@ else:
 
 def about():
 
-    aboutcontent =  "<p>nifty tool to inject cmx3600-edl events, csv or dvs clipster markers</p>" \
+    aboutcontent =  "<p>nifty tool to inject cmx3600-edl events, a csv-list or dvs clipster markers</p>" \
                     "<p>as clip-markers into a sequence of your pfclean-project.</p>" \
                     "<p>written in python3.4.3, gui pyqt5, win 7/8/10 x64</p>" \
                     "<p><a href=http://suminus.github.io/pfc_marker style=\"color: black;\" ><b>visit project page</a></p>" \
@@ -79,6 +78,7 @@ def selprj():
 
         prj = fileName
         print(prj)
+
         prjdic['prj'] = prj
         recentprjfldnew = prj.rsplit('/', 1)[0]
         recentprjfldnew = recentprjfldnew + '/'
@@ -91,9 +91,9 @@ def selprj():
             for line in lines:
                 file.write(line)
 
-
         prjfile = prj.split('/')[-1:]
         prjfile = prjfile[0]
+        prjdic['prjfile'] = prjfile
         print (prjfile)
         ui.label_msgs.setText('selected project: ' + prjfile)
 
@@ -329,9 +329,22 @@ def selcp():
                 if linecons[0] == '<MARKER':
                     event = re.findall('"([^"]*)"', str(linecons[1]))
                     #comment = re.findall('\"(.+?)\"', str(linecons))
-                    comment = re.findall(r'"([^"]*)"', str(line))
-                    del comment[0]
-                    comment = ' '.join(comment)
+                    marknamecomment = re.findall(r'"([^"]*)"', str(line))
+                    del marknamecomment[0]
+
+                    if len(marknamecomment) == 2:
+                        markername = marknamecomment[0]
+                        comment = marknamecomment[1]
+                        print('markername: ' + markername)
+                        print('comment: ' + comment)
+
+                    if len(marknamecomment) == 1:
+                        comment = marknamecomment[0]
+                        markername = cprjfile
+                        print('comment: ' + comment)
+                        print('no markername using cprjfile: ' + markername)
+
+                    #comment = ' '.join(comment)
                     cptclist.append(event)
                     nanotofr = int(1000000000 / int(prjseqfps))
                     eventfr = int(int(event[0]) / nanotofr)    #40000000 @ 25fps
@@ -344,7 +357,7 @@ def selcp():
                         count +=1
                         insert1 ="\n\t\t\t\t<frameMarker>"
                         insert2 ="\n\t\t\t\t\t<frame>%s</frame>" % eventfroff #\n
-                        insert3 ="\n\t\t\t\t\t<name>%s</name>" % cprjfile
+                        insert3 ="\n\t\t\t\t\t<name>%s</name>" % markername
                         insert4 ="\n\t\t\t\t\t<notes>%s</notes>" % comment
                         insert5 ="\n\t\t\t\t</frameMarker>"
                         file = open(xml_formatted_markers, "a+")
@@ -466,10 +479,10 @@ def savexmlmarker():
         pass
 
 def inject():
-
-    prjbkp = str(prjdic.get('prj')) + time.strftime("%Y-%d-%m-%H-%M-%S") + '.bkp'
+    timestamp = time.strftime("%Y-%d-%m-%H-%M-%S")
+    prjbkp = str(prjdic.get('prj')) + '-' + timestamp + '.bkp'
     shutil.copyfile(str(prjdic.get('prj')), prjbkp)
-    ui.label_msgs.append('backup-file: ' + str(prjbkp))
+    ui.label_msgs.append('backup-file: ' + (str(prjdic.get('prjfile')) + '-' + timestamp + '.bkp'))
     temp = os.path.join(appdata_pfc_marker, 'temp')
     injectmarkers = os.path.join(appdata_pfc_marker, 'xml_formatted_markers.txt')
     injectmarkers = etree.parse(injectmarkers)
@@ -630,9 +643,10 @@ def update():
                 urllib.request.urlretrieve(msi_updateurl, savepath, downprogress)
                 ui.label_msgs.append('download finished.')
                 os.startfile(os.path.join(os.getenv('TEMP'), msi_update))
+                exit()
             except Exception:
                 ui.label_msgs.append('download of update failed!')
-            exit()
+                ui.progressBar.hide()
         else:
             ui.label_msgs.append('updatefile not found!')
             ui.statusbar.showMessage('updatefile not found!')
@@ -642,11 +656,13 @@ def update():
     else:
         print("Cancel")
 
+
 def downprogress(blocknum, blocksize, totalsize):
     readsofar = blocknum * blocksize
     if totalsize > 0:
         percent = readsofar * 100 / totalsize
         ui.progressBar.setValue(int(percent))
+        return int(percent)
 
 def find_data_file(filename):
     if getattr(sys, 'frozen', False):
@@ -667,7 +683,7 @@ if __name__ == '__main__':
     ui = Ui_MainWindow()
     ui.setupUi(MainWindow)
     MainWindow.setWindowTitle("pfc_marker %s" % version)
-
+ 
     timer=QtCore.QTimer()
     timer.timeout.connect(logochange)
     timer.start(5000)
@@ -706,7 +722,7 @@ if __name__ == '__main__':
     if checkupdateinitcfg == 'checkupdates=1':
         ui.label_msgs.setText('checking for updates ...')
         ui.actionCheckUpdates.setChecked(True)
-        timer.singleShot(100, checkupdate)
+        timer.singleShot(333, checkupdate)
     else:
         ui.actionCheckUpdates.setChecked(False)
     
