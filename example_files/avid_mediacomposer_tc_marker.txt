@@ -1,0 +1,4 @@
+Administrator	10:00:33:13	TC1	red	comment marker1	1
+Administrator	10:00:37:19	TC1	red	comment marker2	1
+Administrator	10:00:43:01	TC1	red	range marker	174
+Administrator	11:00:43:01	TC1	red	range marker	100
