@@ -5,6 +5,7 @@
 import sys, time, re, os, string, itertools, fileinput, shutil, subprocess, inspect, urllib.request, requests
 import lxml.etree as etree
 from lxml import etree
+from socket import timeout
 from timecode import Timecode
 from urllib.request import urlopen, Request, urlretrieve
 from PyQt5 import QtCore, QtSvg
@@ -13,7 +14,7 @@ from PyQt5.QtWidgets import QMessageBox, QApplication, QMainWindow, QInputDialog
 from pfc_marker_ui import *
 
 
-version = "0.160128"
+version = "0.160205"
 ########################################################################
 prjdic = {}
 os.environ["REQUESTS_CA_BUNDLE"] = os.path.join(os.getcwd(), "cacert.pem")
@@ -52,9 +53,11 @@ else:
 
 def about():
 
-    aboutcontent =  "<p>nifty tool to inject cmx3600-edl events, a csv-list or dvs clipster markers</p>" \
-                    "<p>as clip-markers into a sequence of your pfclean-project.</p>" \
-                    "<p>written in python3.4.3, gui pyqt5, win 7/8/10 x64</p>" \
+    aboutcontent =  "<p>nifty tool to inject "\
+                    "cmx3600-edl events, a csv-list, dvs clipster timeline markers <br>" \
+                    "or avid mediacomposer markers as clip-markers into an existing sequence <br>" \
+                    "in your pfclean-project.<br><br>" \
+                    "written in python3.4.3, gui pyqt5, win 7/8/10 x64</p>" \
                     "<p><a href=http://suminus.github.io/pfc_marker style=\"color: black;\" ><b>visit project page</a></p>" \
                    #"<p><a href='mailto:support@mariohartz.de' style=\"color: black;\" ><b>© mario hartz</a> </b></p>"
 
@@ -158,6 +161,7 @@ def enablebtn():
             ui.btn_seledl.setEnabled(True)
             ui.btn_selcp.setEnabled(True)
             ui.btn_selcsv.setEnabled(True)
+            ui.btn_selavid.setEnabled(True)
             selected_prjseqname = str(ui.combobox_selectseq.currentText())
             print('seleceted prjseqname in combobox_selectseq -> filtered: ' + selected_prjseqname)
 
@@ -252,8 +256,8 @@ def seledl():
                             count +=1
                             insert1 ="\n\t\t\t\t<frameMarker>"
                             insert2 ="\n\t\t\t\t\t<frame>%s</frame>" % eventframes #\n
-                            insert3 ="\n\t\t\t\t\t<name>%s</name>" % edl
-                            insert4 ="\n\t\t\t\t\t<notes>%s</notes>" % linecons[1] # usually tapename
+                            insert3 ="\n\t\t\t\t\t<name>%s</name>" % str('edl: ' + edl)
+                            insert4 ="\n\t\t\t\t\t<notes>%s</notes>" % str('tape: ' + linecons[1]) # usually tapename
                             insert5 ="\n\t\t\t\t</frameMarker>"
                             file = open(xml_formatted_markers, "a+")
                             file.write(str(insert1))
@@ -341,7 +345,7 @@ def selcp():
                     if len(marknamecomment) == 1:
                         comment = marknamecomment[0]
                         markername = cprjfile
-                        print('comment: ' + comment)
+                        print('comment: ' + comment) 
                         print('no markername using cprjfile: ' + markername)
 
                     #comment = ' '.join(comment)
@@ -357,7 +361,7 @@ def selcp():
                         count +=1
                         insert1 ="\n\t\t\t\t<frameMarker>"
                         insert2 ="\n\t\t\t\t\t<frame>%s</frame>" % eventfroff #\n
-                        insert3 ="\n\t\t\t\t\t<name>%s</name>" % markername
+                        insert3 ="\n\t\t\t\t\t<name>%s</name>" % str('cp: ' + markername)
                         insert4 ="\n\t\t\t\t\t<notes>%s</notes>" % comment
                         insert5 ="\n\t\t\t\t</frameMarker>"
                         file = open(xml_formatted_markers, "a+")
@@ -436,7 +440,7 @@ def selcsv():
                         count +=1
                         insert1 ="\n\t\t\t\t<frameMarker>"
                         insert2 ="\n\t\t\t\t\t<frame>%s</frame>" % eventframes #\n
-                        insert3 ="\n\t\t\t\t\t<name>%s</name>" % csvfile
+                        insert3 ="\n\t\t\t\t\t<name>%s</name>" % str('csv: ' + csvfile)
                         insert4 ="\n\t\t\t\t\t<notes>%s</notes>" % (','.join(csvnoteslist))
                         insert5 ="\n\t\t\t\t</frameMarker>"
                         file = open(xml_formatted_markers, "a+")
@@ -446,25 +450,113 @@ def selcsv():
                         file.write(str(insert4))
                         file.write(str(insert5))
                         file.close()
-                    file = open(xml_formatted_markers, "a+")
-                    file.write('\n\t\t\t</frameMarkers>\n\t\t</clipFrameMarker>\n\t</clipFrameMarkers>')
-                    file.close()
-                    ui.label_msgs.append(csvfile + ' contains ' + str(len(csvtclist)) + ' entries.')
-                    ui.label_msgs.append('csv events in sequence range: <b>' + str(count))
+
                     print(csvtclist)
                     print('csv-events: ' + str(len(csvtclist)))
                 else:
                     print('-> skipped line: ' + line[0] + 'not a valid event entry!' )
                     pass
+            file = open(xml_formatted_markers, "a+")
+            file.write('\n\t\t\t</frameMarkers>\n\t\t</clipFrameMarker>\n\t</clipFrameMarkers>')
+            file.close()
+            
         if count == 0:
+            ui.label_msgs.append(csvfile + ' contains ' + str(len(csvtclist)) + ' entries.')
+            ui.label_msgs.append('csv events in sequence range: <b>' + str(count))
             ui.btn_import.setEnabled(False)
             ui.btn_xml.setEnabled(False)
         else:
+            ui.label_msgs.append(csvfile + ' contains ' + str(len(csvtclist)) + ' entries.')
+            ui.label_msgs.append('csv events in sequence range: <b>' + str(count))
             ui.btn_import.setEnabled(True)
             ui.btn_xml.setEnabled(True)
         
         ui.checkBox_srctc.setEnabled(False)
         ui.checkBox_rectc.setEnabled(False)
+
+
+def selavid():
+    openFilesPath = ''
+    fileName, _ = QFileDialog.getOpenFileName(None, "select avid markers exported as txt", '' , "avid marker textfile (*.txt);;All Files (*.*)")
+    if fileName:
+        prjseqfps = prjdic.get('prjseqfps')
+        prjseqoff = prjdic.get('prjseqoff')
+        prjseqid = prjdic.get('prjseqid')
+        prjseqstart = prjdic.get('prjseqstart')
+        prjseqend = prjdic.get('prjseqend')
+
+        print(prjseqstart + ' ' + prjseqend)
+
+        avidpath = fileName
+        avidfile = avidpath.split('/')[-1:]
+        avidfile = ' '.join(avidfile)
+        ui.label_msgs.append('selected avid-marker-textfile:<b> ' + avidfile)
+
+        avidtclist = []
+        with open(avidpath) as f:
+            file = open(xml_formatted_markers, "w")
+            file.write('\t<clipFrameMarkers>\n\t\t<clipFrameMarker>\n\t\t\t<identifier>%s</identifier>\n\t\t\t<counter>%s</counter>\n\t\t\t<frameMarkers>' % (prjseqid, prjseqoff))
+            count = 0
+
+            for line in f:
+                if line[0]:
+                    linecons = re.split(r'\t+', line.rstrip('\n'))
+                    print('line: ' + line)
+                    avidevent = linecons[1]
+                    print('avidevent tc: ' + avidevent)
+                    avidname = linecons[4]
+                    print('avidname: ' + avidname)
+                    avidnoteslen = int(len(linecons))
+                    avidnoteslist = []
+                    for i in range(avidnoteslen):
+                        if i > 0:
+                            avidnoteslist.append(linecons[i])
+                    print(avidnoteslist)
+
+                    avidtclist.append(avidevent)
+                    avidtclistframes = []
+                    avidtcfr = Timecode(prjseqfps, avidevent)
+                    eventframes = avidtcfr.frames
+                    eventframes = eventframes - 1 # remove one frame offset
+                    avidtclistframes.append(eventframes)
+                    print(avidtclistframes)
+                    if  eventframes >= int(prjseqstart) and eventframes <= int(prjseqend):
+                        count +=1
+                        insert1 ="\n\t\t\t\t<frameMarker>"
+                        insert2 ="\n\t\t\t\t\t<frame>%s</frame>" % eventframes #\n
+                        insert3 ="\n\t\t\t\t\t<name>%s</name>" % str('avid: ' + avidname)
+                        insert4 ="\n\t\t\t\t\t<notes>%s</notes>" % (','.join(avidnoteslist))
+                        insert5 ="\n\t\t\t\t</frameMarker>"
+                        file = open(xml_formatted_markers, "a+")
+                        file.write(str(insert1))
+                        file.write(str(insert2))
+                        file.write(str(insert3))
+                        file.write(str(insert4))
+                        file.write(str(insert5))
+                        file.close()
+                else:
+                    print('-> skipped line: ' + line[0] + 'not a valid event entry!' )
+                    pass
+
+            file = open(xml_formatted_markers, "a+")
+            file.write('\n\t\t\t</frameMarkers>\n\t\t</clipFrameMarker>\n\t</clipFrameMarkers>')
+            file.close()
+            
+        if count == 0:
+            ui.btn_import.setEnabled(False)
+            ui.btn_xml.setEnabled(False)
+            ui.label_msgs.append('avid marker events in sequence range: <b>' + str(count))
+        else:
+            ui.label_msgs.append(avidfile + ' contains ' + str(len(avidtclist)) + ' entries.')
+            ui.label_msgs.append('avid marker events in sequence range: <b>' + str(count))
+            print(avidtclist)
+            print('avid-events: ' + str(len(avidtclist)))
+            ui.btn_import.setEnabled(True)
+            ui.btn_xml.setEnabled(True)
+        
+        ui.checkBox_srctc.setEnabled(False)
+        ui.checkBox_rectc.setEnabled(False)
+
 
 def savexmlmarker():
     filename, _ = QFileDialog.getSaveFileName(None, 'Save XML-formated Markers to Text-File', str(prjdic.get('prjfolder') + prjdic.get('prj') +'_xml_markers.txt') , "Text Files (*.txt);; All Files (*)")
@@ -567,13 +659,6 @@ def logochange():
     finally:
         pass
 
-def check_internet():
-    try:
-        network = urllib.request.urlopen('http://www.google.com', timeout=1)
-        return True
-    except urllib.request.URLError:
-        return False
-
 def checkupdateconf():
     if ui.actionCheckUpdates.isChecked():
         with open(initcfg, "r") as file:
@@ -590,6 +675,20 @@ def checkupdateconf():
             for line in lines:
                 file.write(line)
 
+def check_internet():
+    url = 'http://www.google.com'
+    try:
+        network = urllib.request.urlopen(url, timeout=1)
+    except urllib.request.URLError:
+        print('data of %s not retrieved.' %(url))
+        return False
+    except timeout:
+        print('socket timed out for %s!' %(url))
+        return False
+    else:
+        print('internet available')
+        return True
+
 def checkupdate():
     if check_internet():
         buildmsi = version
@@ -601,7 +700,7 @@ def checkupdate():
             onlinemsi = urlopen(msi_update).read().decode('utf_8')
             onlinemsi = str(onlinemsi)
             onlinemsi = onlinemsi.replace("\n", "")
-            print('update msi textfile: ' + onlinemsi)
+            print('found online msi textfile: ' + onlinemsi)
 
             if onlinemsi > buildmsi:
                 ui.menuUpdate.setTitle("Update available!")
@@ -612,9 +711,9 @@ def checkupdate():
                 ui.label_msgs.setText('checking for updates ... no update found.')
         else:
             print(check)
-            ui.menuUpdate.setTitle("")
+            ui.menuUpdate.setTitle('')
     else:
-        ui.menuUpdate.setTitle("")
+        ui.menuUpdate.setTitle('')
         ui.label_msgs.append('no internet access')
 
 
@@ -700,6 +799,9 @@ if __name__ == '__main__':
 
     ui.btn_selcsv.clicked.connect(selcsv)
     ui.btn_selcsv.setEnabled(False)
+
+    ui.btn_selavid.clicked.connect(selavid)
+    ui.btn_selavid.setEnabled(False)
 
     ui.menuUpdate.setTitle("")
     ui.btn_import.setEnabled(False)
