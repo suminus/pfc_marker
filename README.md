@@ -10,6 +10,8 @@ edl: source- or record-tc only, dissolves are filterd out, tapename mapped as no
 clipster: timeline-markers including names and comments
 
 csv-text: one marker-event per line, timecode separated by by the first comma
+
+avid mediacomposer: mediacomposer markers exported as txt, last number shows markerrange
 ```
 timecode-math done with: https://github.com/eoyilmaz/timecode
 
