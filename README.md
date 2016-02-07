@@ -9,13 +9,13 @@ edl: source- or record-tc only, dissolves are filterd out, tapename mapped as no
 
 clipster: timeline-markers including names and comments
 
-csv-text: one marker-event per line, timecode separated by by the first comma
+csv-text: one marker-event per line, timecode separated by the first comma
 
-avid mediacomposer: mediacomposer markers exported as txt, last number shows markerrange
+avid mediacomposer: uses markers exported as textfile, last number shows markerrange
 ```
 timecode-math done with: https://github.com/eoyilmaz/timecode
 
-drop/non-drop handling is not implemented, yet.
+tc drop/non-drop handling is not implemented, yet.
 
 written in python3.4.3 and pyqt5, windows 7/8/10 x64
 
