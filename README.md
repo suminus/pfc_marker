@@ -2,7 +2,7 @@
 
 http://suminus.github.io/pfc_marker
 
-pfc_marker imports edls (cmx3600),csv, dvs clipster-timelines as clip-frame-markers into a existing pfclean-timeline.
+pfc_marker imports edls (cmx3600),csv, dvs clipster-timelines and avid mediacomposer-markers as clip-frame-markers into a existing pfclean-timeline.
 
 ```
 edl: source- or record-tc only, dissolves are filterd out, tapename mapped as notes
