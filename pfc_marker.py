@@ -14,9 +14,9 @@ from PyQt5.QtWidgets import QMessageBox, QApplication, QMainWindow, QInputDialog
 from pfc_marker_ui import *
 
 
-version = "0.160205"
+version = "0.160210"
 ########################################################################
-prjdic = {}
+
 os.environ["REQUESTS_CA_BUNDLE"] = os.path.join(os.getcwd(), "cacert.pem")
 
 #remove old versions programdata init, due to user-rights issues
@@ -50,6 +50,8 @@ else:
         recentprjfld = lines[0]
         checkupdateinitcfg = lines[1]
 
+prjdic = {}
+
 
 def about():
 
@@ -68,11 +70,12 @@ def about():
         pass
 
 def selprj():
-    ui.combobox_selectseq.setEnabled(False)
+    disablebtn()
     openFilesPath = ''
+
     fileName, _ = QFileDialog.getOpenFileName(None, "select pfclean project", recentprjfld, "PFClean Prj (*.pfrp);;All Files (*.*)")
     if fileName:
-
+        print('fileName: ' + fileName)
         ui.combobox_selectseq.clear()
         ui.combobox_selectseq.setCurrentIndex(0)
         ui.combobox_selectseq.addItems(['select sequence'])
@@ -80,8 +83,7 @@ def selprj():
         ui.combobox_selectseq.model().item(0).setEnabled(False)
 
         prj = fileName
-        print(prj)
-
+        
         prjdic['prj'] = prj
         recentprjfldnew = prj.rsplit('/', 1)[0]
         recentprjfldnew = recentprjfldnew + '/'
@@ -101,7 +103,7 @@ def selprj():
         ui.label_msgs.setText('selected project: ' + prjfile)
 
         prjseqfld = prj.rsplit('/', 1)[0] + '/sequences'
-
+        prjseqname_list = []
         for prjseqid in os.listdir(prjseqfld):
             print('prjseqid: ' + prjseqid)
             prjseqpath = prjseqfld + '/' + prjseqid
@@ -114,46 +116,36 @@ def selprj():
                     print('prjseqname[0]: ' + prjseqname[0])
                     pattern = '<endFrame>0</endFrame>'
 
-                    if str(prjseqname[0]) == 'Rough edit 1':
+                    if str(prjseqname[0]) == 'Rough edit 1' or 'Sequence 1':
                         if pattern in open(prjseqpath).read():
-                            print('0 lenght ---- boom!!')
-                            ui.label_msgs.append('filtered "Rough edit 1" as pfclean zero-length seq')
+                            print(prjseqname[0] + ' with 0 lenght ---- boom!!')
+                            ui.label_msgs.append('filtered %s as pfclean zero-length seq' %(str(prjseqname[0])))
                         else:
-                            ui.combobox_selectseq.addItems(prjseqname)
+                            prjseqname_list.append(str(prjseqname))
                             prjseqname = ' '.join(prjseqname)
                             prjdic[prjseqname] = prjseqid
                             print(prjseqname + '   aka   ' + prjseqid)
-                    elif str(prjseqname[0]) == 'Sequence 1':
-                        if pattern in open(prjseqpath).read():
-                            print('0 lenght ---- boom!!')
-                            ui.label_msgs.append('filtered "Sequence 1" as pfclean zero-length seq')
-                        else:
-                            ui.combobox_selectseq.addItems(prjseqname)
-                            prjseqname = ' '.join(prjseqname)
-                            prjdic[prjseqname] = prjseqid
-                            print(prjseqname + '   aka   ' + prjseqid)
-                    else:
-                        ui.combobox_selectseq.addItems(prjseqname)
-                        prjseqname = ' '.join(prjseqname)
-                        prjdic[prjseqname] = prjseqid
-                        print(prjseqname + '   aka   ' + prjseqid)
-                        
                     
         prjdic['prjseqfolder'] = prjseqfld
-        print(prjdic)  
-              
+        print(prjdic)
+        for item in sorted(prjseqname_list):
+            item = item.strip('[]').strip("''")
+            ui.combobox_selectseq.addItem(item)
         ui.combobox_selectseq.setEnabled(True)
         ui.combobox_selectseq.currentIndexChanged['QString'].connect(enablebtn)
         
     else:
         print('no project selected!')
         ui.label_msgs.setText('no pfclean-project selected!')
-    ui.checkBox_srctc.setEnabled(False)
-    ui.checkBox_rectc.setEnabled(False)
+        ui.combobox_selectseq.clear()
+        ui.combobox_selectseq.setCurrentIndex(0)
+        ui.combobox_selectseq.addItems(['select sequence'])
+        ui.combobox_selectseq.setItemText(0, "select sequence")
+        ui.combobox_selectseq.model().item(0).setEnabled(False)
+        disablebtn()
 
 def enablebtn():
     selected_prjseqname = str(ui.combobox_selectseq.currentText())
-    print("seleceted prjseqname in combobox_selectseq: " + selected_prjseqname)
     if str(selected_prjseqname) != 'select sequence':
         if (selected_prjseqname) is not '':
             ui.checkBox_srctc.setEnabled(True)
@@ -162,7 +154,6 @@ def enablebtn():
             ui.btn_selcp.setEnabled(True)
             ui.btn_selcsv.setEnabled(True)
             ui.btn_selavid.setEnabled(True)
-            selected_prjseqname = str(ui.combobox_selectseq.currentText())
             print('seleceted prjseqname in combobox_selectseq -> filtered: ' + selected_prjseqname)
 
             selected_prjseqid = prjdic.get(selected_prjseqname)
@@ -190,14 +181,26 @@ def enablebtn():
             prjseqdf = root.findtext("dropFrame")
             prjdic['prjseqdf'] = str(prjseqdf)
             ui.label_msgs.append('seclected sequence <b>' + prjseqname + '</b> is <b>' + prjseqfps + 'fps.')
-        else:
-            pass
+            ui.label_msgs.append('startframe: <b>' + prjseqstart + '</b> endframe: <b>' + prjseqend )
+
     else:
-        ui.btn_seledl.setEnabled(False)
-        ui.btn_import.setEnabled(False) 
-        ui.btn_xml.setEnabled(False)
-        ui.checkBox_srctc.setEnabled(False)
-        ui.checkBox_rectc.setEnabled(False)
+        disablebtn()
+        pass
+
+def disablebtn():
+    try: ui.combobox_selectseq.disconnect() # avoid multiple times same output in messagebox after selecting a sequence
+    except Exception: pass
+
+    prjdic.clear()
+    ui.combobox_selectseq.setEnabled(False)
+    ui.btn_seledl.setEnabled(False)
+    ui.btn_selcp.setEnabled(False)
+    ui.btn_selcsv.setEnabled(False)
+    ui.btn_selavid.setEnabled(False)
+    ui.btn_import.setEnabled(False) 
+    ui.btn_xml.setEnabled(False)
+    ui.checkBox_srctc.setEnabled(False)
+    ui.checkBox_rectc.setEnabled(False)
 
 def checkboxrectc():
     if ui.checkBox_rectc.isChecked():
@@ -566,11 +569,12 @@ def savexmlmarker():
         with open(filename, 'wb') as f:
             f.write(data)
         ui.label_msgs.append('file saved as: \n' + str(filename))
-        os.system(filename)
+        os.startfile(filename)
     else:
         pass
 
 def inject():
+    #make backup of untouched file
     timestamp = time.strftime("%Y-%d-%m-%H-%M-%S")
     prjbkp = str(prjdic.get('prj')) + '-' + timestamp + '.bkp'
     shutil.copyfile(str(prjdic.get('prj')), prjbkp)
@@ -590,16 +594,22 @@ def inject():
 
     if check is not None:
         clipFrameMarker = allmarkers.findall('clipFrameMarker')
+        print(clipFrameMarker)
         for clipFrameMarkerSeq in clipFrameMarker:
             identifiers = clipFrameMarkerSeq.findall('identifier')
             for identifier in identifiers:
-                if identifier.text == prjseqid:
+                origclipframemarker = identifier.getparent()
+                if identifier.text == prjseqid: # if markers present, search our current sequence
                     print('found prjseqid in orig: ' + prjseqid)
-                    origclipframemarker = identifier.getparent()
-                    print('parent-name in orig: ' + origclipframemarker.tag)
+                    print('var origclipframemarker ... parent-name in orig: ' + origclipframemarker.tag)
                     origclipframemarker.clear()
                     origclipframemarker.insert(0, injectmarkers)
-
+                else:
+                    origclipframemarkersection = origclipframemarker.getparent() # if markers present, but not the current sequence -> add new child object
+                    print('var origclipframemarkersection: ' + str(origclipframemarkersection))
+                    origclipframemarkersection.append(injectmarkers)
+                    pass
+                
         f1 = open(temp, 'wb')
         f1.write(etree.tostring(tree, pretty_print=False))
         f1.close()
@@ -641,13 +651,10 @@ def inject():
         f2.close()
             
     ui.label_msgs.append('import successful. <b> moooh!')
-
+    disablebtn()
     """
     # <clipFrameMarkers/> # only present, when no markers in whole project
     """
-
-def exit():
-    sys.exit(0)
 
 def blink():
     ui.logo.setPixmap(QtGui.QPixmap(":/pfc_marker_logo.svg"))
@@ -755,7 +762,6 @@ def update():
     else:
         print("Cancel")
 
-
 def downprogress(blocknum, blocksize, totalsize):
     readsofar = blocknum * blocksize
     if totalsize > 0:
@@ -773,7 +779,8 @@ def find_data_file(filename):
         datadir = os.path.dirname(__file__)
     return os.path.join(datadir, filename)
 
-
+def exit():
+    sys.exit(0)
 
 if __name__ == '__main__':
     
@@ -787,36 +794,23 @@ if __name__ == '__main__':
     timer.timeout.connect(logochange)
     timer.start(5000)
 
+    disablebtn()
+
     ui.actionExit.triggered.connect(exit)
     ui.actionAbout.triggered.connect(about)
     ui.btn_selprj.clicked.connect(selprj)
-    
-    ui.btn_seledl.setEnabled(False)
     ui.btn_seledl.clicked.connect(seledl)
-    
     ui.btn_selcp.clicked.connect(selcp)
-    ui.btn_selcp.setEnabled(False)
-
     ui.btn_selcsv.clicked.connect(selcsv)
-    ui.btn_selcsv.setEnabled(False)
-
     ui.btn_selavid.clicked.connect(selavid)
-    ui.btn_selavid.setEnabled(False)
-
-    ui.menuUpdate.setTitle("")
-    ui.btn_import.setEnabled(False)
-    ui.checkBox_srctc.setEnabled(False)
-    ui.checkBox_rectc.setEnabled(False)
 
     ui.btn_xml.clicked.connect(savexmlmarker)
     ui.checkBox_rectc.stateChanged.connect(checkboxrectc)
     ui.checkBox_srctc.stateChanged.connect(checkboxsrctc)
     ui.btn_import.clicked.connect(inject)
     ui.label_msgs.setText('')
-    ui.combobox_selectseq.setEnabled(False)
-    ui.combobox_selectseq.setItemText(0, "select sequence")
-    ui.combobox_selectseq.model().item(0).setEnabled(False)
 
+    ui.menuUpdate.setTitle("")
     ui.actionUpdate.triggered.connect(update)
     ui.actionCheckUpdates.triggered.connect(checkupdateconf)
     ui.progressBar.hide()
