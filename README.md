@@ -17,6 +17,6 @@ timecode-math done with: https://github.com/eoyilmaz/timecode
 
 tc drop/non-drop handling is not implemented, yet.
 
-written in python3.4 and qt5, tested with the pixelfarm pfclean 2014-2015 on windows 7/8/10
+written in python3.4 and qt5, tested with [the pixelfarm pfclean] (http://www.thepixelfarm.co.uk/pfclean) 2014-2015 on windows 7/8/10
 
 
