@@ -14,7 +14,7 @@ from PyQt5.QtWidgets import QMessageBox, QApplication, QMainWindow, QInputDialog
 from pfc_marker_ui import *
 
 
-version = "0.160210"
+version = "0.170722"
 ########################################################################
 
 os.environ["REQUESTS_CA_BUNDLE"] = os.path.join(os.getcwd(), "cacert.pem")
@@ -61,7 +61,7 @@ def about():
                     "in your pfclean-project.<br><br>" \
                     "written in python3.4.3, gui pyqt5, win 7/8/10 x64</p>" \
                     "<p><a href=http://suminus.github.io/pfc_marker style=\"color: black;\" ><b>visit project page</a></p>" \
-                   #"<p><a href='mailto:support@mariohartz.de' style=\"color: black;\" ><b>© mario hartz</a> </b></p>"
+                   #"<p><a href='mailto:office@mariohartz.de' style=\"color: black;\" ><b>© mario hartz</a> </b></p>"
 
     reply = QMessageBox.information(None, "About", aboutcontent)
     if reply == QMessageBox.Ok:
@@ -75,7 +75,7 @@ def selprj():
 
     fileName, _ = QFileDialog.getOpenFileName(None, "select pfclean project", recentprjfld, "PFClean Prj (*.pfrp);;All Files (*.*)")
     if fileName:
-        print('fileName: ' + fileName)
+        print('fileName: {}' .format(fileName))
         ui.combobox_selectseq.clear()
         ui.combobox_selectseq.setCurrentIndex(0)
         ui.combobox_selectseq.addItems(['select sequence'])
@@ -100,20 +100,19 @@ def selprj():
         prjfile = prjfile[0]
         prjdic['prjfile'] = prjfile
         print (prjfile)
-        ui.label_msgs.setText('selected project: ' + prjfile)
+        ui.label_msgs.setText('selected project: {}' .format(prjfile))
 
         prjseqfld = prj.rsplit('/', 1)[0] + '/sequences'
         prjseqname_list = []
         for prjseqid in os.listdir(prjseqfld):
-            print('prjseqid: ' + prjseqid)
-            prjseqpath = prjseqfld + '/' + prjseqid
-            prjseqpath = str(prjseqpath.replace("\n", ""))
-            print('prjseqpath: ' + prjseqpath)
+            print('prjseqid: {}' .format(prjseqid))
+            prjseqpath = '{}/{}' .format(prjseqfld, prjseqid)
+            print('prjseqpath: {}' .format(prjseqpath))
             with open(prjseqpath, "r") as prjseqfile:
                 for line in itertools.islice(prjseqfile, 3, 4):
                     prjseqfile = line.replace("\n", "")
                     prjseqname = re.compile('<name>(.*?)</name>', re.DOTALL |  re.IGNORECASE).findall(prjseqfile)
-                    print('prjseqname[0]: ' + prjseqname[0])
+                    print('prjseqname[0]: {}' .format(prjseqname[0]))
                     pattern = '<endFrame>0</endFrame>'
 
                     if str(prjseqname[0]) == 'Rough edit 1' or 'Sequence 1':
@@ -180,8 +179,8 @@ def enablebtn():
             prjdic['prjseqfps'] = prjseqfps
             prjseqdf = root.findtext("dropFrame")
             prjdic['prjseqdf'] = str(prjseqdf)
-            ui.label_msgs.append('seclected sequence <b>' + prjseqname + '</b> is <b>' + prjseqfps + 'fps.')
-            ui.label_msgs.append('startframe: <b>' + prjseqstart + '</b> endframe: <b>' + prjseqend )
+            ui.label_msgs.append('seclected sequence <b> {} </b> is <b> {} fps.' .format(prjseqname, prjseqfps))
+            ui.label_msgs.append('startframe: <b> {} </b>endframe: <b> {}' .format (prjseqstart, prjseqend))
 
     else:
         disablebtn()
@@ -218,12 +217,12 @@ def seledl():
     selected_prjseqname = str(ui.combobox_selectseq.currentText())
 
     if ui.checkBox_rectc.isChecked():
-        conformmode = 6
+        conformmode = 6 # column to read from edl
         conformmodemsg = 'and <b> record tc.'
     else:
         pass
     if ui.checkBox_srctc.isChecked():
-        conformmode = 4
+        conformmode = 4  # column to read from edl
         conformmodemsg = 'and <b> source tc.'
     else:
         pass
@@ -241,7 +240,7 @@ def seledl():
         tclist = []
         count = 0
         file = open(xml_formatted_markers, "w")
-        file.write('\t<clipFrameMarkers>\n\t\t<clipFrameMarker>\n\t\t\t<identifier>%s</identifier>\n\t\t\t<counter>%s</counter>\n\t\t\t<frameMarkers>' % (prjseqid, prjseqoff))
+        file.write('\t<clipFrameMarkers>\n\t\t<clipFrameMarker>\n\t\t\t<identifier>{}</identifier>\n\t\t\t<counter>{}</counter>\n\t\t\t<frameMarkers>' .format(prjseqid, prjseqoff))
 
         with open(edlpath) as f:
             for line in f:
@@ -277,9 +276,9 @@ def seledl():
         file.write('\n\t\t\t</frameMarkers>\n\t\t</clipFrameMarker>\n\t</clipFrameMarkers>')
         file.close()
 
-        ui.label_msgs.append(edl + ' contains <b>' + str(len(tclist)) + '</b> entries.')
-        ui.label_msgs.append('edl events in sequence range: <b>' + str(count))
-        ui.label_msgs.append('parsed with <b>' + prjseqfps + 'fps </b>' + conformmodemsg )
+        ui.label_msgs.append(edl + ' contains <b> {}</b> entries.' .format(len(tclist)))
+        ui.label_msgs.append('edl events in sequence range: <b> {}' .format(count))
+        ui.label_msgs.append('parsed with <b>{} fps </b>{}' .format(prjseqfps, conformmodemsg))
 
         if count == 0:
             ui.btn_import.setEnabled(False)
@@ -302,7 +301,7 @@ def selcp():
         cprjfile = cprjpath.split('/')[-1:]
         cprjfile = cprjfile[0]
         print (cprjfile)
-        ui.label_msgs.append('selected clipster project:<b> ' + cprjfile)
+        ui.label_msgs.append('selected clipster project:<b> {}' .format(cprjfile))
 
         prjseqoff = prjdic.get('prjseqoff')
         prjseqid = prjdic.get('prjseqid')
@@ -325,7 +324,25 @@ def selcp():
         cptclist = []
         cptclistframes = []
 
+
+
+
+
+
+
+        
+        ## extract all MARKERLIST-part for clean up \n
         with open(cprjpath) as f:
+            xmldata = f.read()
+            markerlist = re.findall(r'<MARKERLIST>(.*?)</MARKERLIST>',xmldata,re.DOTALL)
+            markerlist = "".join(markerlist).replace('\n',' ')
+            markerlist = "".join(markerlist).replace('/>','/>\n')
+            xml_markerlist_cleanup = os.path.join(appdata_pfc_marker, 'xml_markerlist_cleanup.txt')
+            file = open(xml_markerlist_cleanup, "w")
+            file.write(markerlist)
+            file.close()
+
+        with open(xml_markerlist_cleanup) as f:
             file = open(xml_formatted_markers, "w")
             file.write('\t<clipFrameMarkers>\n\t\t<clipFrameMarker>\n\t\t\t<identifier>%s</identifier>\n\t\t\t<counter>%s</counter>\n\t\t\t<frameMarkers>' % (prjseqid, prjseqoff))
             count = 0
@@ -342,14 +359,14 @@ def selcp():
                     if len(marknamecomment) == 2:
                         markername = marknamecomment[0]
                         comment = marknamecomment[1]
-                        print('markername: ' + markername)
-                        print('comment: ' + comment)
+                        print('markername: {}' .format(markername))
+                        print('comment: {}' .format(comment))
 
                     if len(marknamecomment) == 1:
                         comment = marknamecomment[0]
                         markername = cprjfile
-                        print('comment: ' + comment) 
-                        print('no markername using cprjfile: ' + markername)
+                        print('comment: {}' .format(comment))
+                        print('no markername using cprjfile: {}' .format(markername))
 
                     #comment = ' '.join(comment)
                     cptclist.append(event)
@@ -383,10 +400,10 @@ def selcp():
             file.write('\n\t\t\t</frameMarkers>\n\t\t</clipFrameMarker>\n\t</clipFrameMarkers>')
             file.close()
 
-        ui.label_msgs.append(cprjfile + ' contains ' + str(len(cptclist)) + ' timeline-marker entries.')
-        ui.label_msgs.append(cprjfile + ' timeline offset is: ' + str(cptcoffset))
-        ui.label_msgs.append('parsed with <b>' + prjseqfps + 'fps </b>')
-        ui.label_msgs.append('clipster events in sequence range: <b>' + str(count))
+        ui.label_msgs.append('{} contains <b> {} </b> timeline-marker entries.' .format(cprjfile, len(cptclist)))
+        ui.label_msgs.append('{} timeline offset is: <b>{}</b>' .format(cprjfile, cptcoffset))
+        ui.label_msgs.append('parsed with <b> {} fps </b>' .format(prjseqfps))
+        ui.label_msgs.append('clipster events in sequence range: <b>{}' .format(count))
 
         if count == 0:
             ui.btn_import.setEnabled(False)
@@ -721,8 +738,8 @@ def checkupdate():
             ui.menuUpdate.setTitle('')
     else:
         ui.menuUpdate.setTitle('')
-        ui.label_msgs.append('no internet access')
-
+        ui.label_msgs.setText('checking for updates ... no internet access.')
+        
 
 def update():
     updatecontent = "<p>do you want to download the latest msi-package?</p>" \
@@ -730,12 +747,13 @@ def update():
 
     reply = QMessageBox.question(None, "Update", updatecontent, QMessageBox.Yes | QMessageBox.No )
     if reply == QMessageBox.Yes:
+
         onlinemsi = prjdic.get('onlinemsi')
         ui.label_msgs.append('downloading update. please wait ...')
         ui.statusbar.showMessage('downloading update. please wait ...')
-        msi_updateurl = 'https://github.com/suminus/pfc_marker/blob/master/msi/pfc_marker-' + onlinemsi + '-amd64.msi?raw=true'
-        print('msi_updateurl: ' + str(msi_updateurl))
-        msi_update = 'pfc_marker-' + onlinemsi + '-amd64.msi'
+        msi_updateurl = 'https://github.com/suminus/pfc_marker/blob/master/msi/pfc_marker-{}-amd64.msi?raw=true' .format(onlinemsi)
+        print('msi_updateurl: {}' .format(msi_updateurl))
+        msi_update = 'pfc_marker-{}-amd64.msi' .format(onlinemsi)
         print('msi: ' + str(msi_update))
 
         check = requests.head(msi_updateurl, verify=find_data_file('cacert.pem')).status_code
@@ -745,14 +763,17 @@ def update():
             ui.progressBar.show()
             ui.statusbar.addPermanentWidget(ui.progressBar)
             ui.progressBar.setValue(0)
+
             try:
                 urllib.request.urlretrieve(msi_updateurl, savepath, downprogress)
                 ui.label_msgs.append('download finished.')
+                time.sleep(1)
                 os.startfile(os.path.join(os.getenv('TEMP'), msi_update))
                 exit()
             except Exception:
                 ui.label_msgs.append('download of update failed!')
                 ui.progressBar.hide()
+
         else:
             ui.label_msgs.append('updatefile not found!')
             ui.statusbar.showMessage('updatefile not found!')
@@ -782,14 +803,16 @@ def find_data_file(filename):
 def exit():
     sys.exit(0)
 
+
 if __name__ == '__main__':
     
     app = QApplication(sys.argv)
     MainWindow = QMainWindow()
     ui = Ui_MainWindow()
     ui.setupUi(MainWindow)
-    MainWindow.setWindowTitle("pfc_marker %s" % version)
- 
+    MainWindow.setWindowTitle('pfc_marker {}' .format(version))
+
+
     timer=QtCore.QTimer()
     timer.timeout.connect(logochange)
     timer.start(5000)
@@ -818,7 +841,8 @@ if __name__ == '__main__':
     if checkupdateinitcfg == 'checkupdates=1':
         ui.label_msgs.setText('checking for updates ...')
         ui.actionCheckUpdates.setChecked(True)
-        timer.singleShot(333, checkupdate)
+        timer.singleShot(100, checkupdate) # wait some ms to build ui
+
     else:
         ui.actionCheckUpdates.setChecked(False)
     
