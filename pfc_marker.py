@@ -61,7 +61,7 @@ def about():
                     "in your pfclean-project.<br><br>" \
                     "written in python3.4.3, gui pyqt5, win 7/8/10 x64</p>" \
                     "<p><a href=http://suminus.github.io/pfc_marker style=\"color: black;\" ><b>visit project page</a></p>" \
-                   #"<p><a href='mailto:office@mariohartz.de' style=\"color: black;\" ><b>© mario hartz</a> </b></p>"
+
 
     reply = QMessageBox.information(None, "About", aboutcontent)
     if reply == QMessageBox.Ok:
