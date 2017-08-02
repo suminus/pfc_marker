@@ -14,7 +14,7 @@ from PyQt5.QtWidgets import QMessageBox, QApplication, QMainWindow, QInputDialog
 from pfc_marker_ui import *
 
 
-version = "0.170724"
+version = "0.170802"
 ########################################################################
 
 os.environ["REQUESTS_CA_BUNDLE"] = os.path.join(os.getcwd(), "cacert.pem")
@@ -346,15 +346,20 @@ def selcp():
             file = open(xml_formatted_markers, "w")
             file.write('\t<clipFrameMarkers>\n\t\t<clipFrameMarker>\n\t\t\t<identifier>%s</identifier>\n\t\t\t<counter>%s</counter>\n\t\t\t<frameMarkers>' % (prjseqid, prjseqoff))
             count = 0
+            
+            markername = cprjfile  # set generic 170802
+
 
             for line in f:
                 linecons =' '.join(line.split())
                 linecons = linecons.split(' ')
                 if linecons[0] == '<MARKER':
                     event = re.findall('"([^"]*)"', str(linecons[1]))
-                    #comment = re.findall('\"(.+?)\"', str(linecons))
                     marknamecomment = re.findall(r'"([^"]*)"', str(line))
                     del marknamecomment[0]
+                    if len(marknamecomment) == 0:
+                    	   markername = "no-name"
+                    	   comment = "no-comment"
 
                     if len(marknamecomment) == 2:
                         markername = marknamecomment[0]
@@ -368,7 +373,6 @@ def selcp():
                         print('comment: {}' .format(comment))
                         print('no markername using cprjfile: {}' .format(markername))
 
-                    #comment = ' '.join(comment)
                     cptclist.append(event)
                     nanotofr = int(1000000000 / int(prjseqfps))
                     eventfr = int(int(event[0]) / nanotofr)    #40000000 @ 25fps
